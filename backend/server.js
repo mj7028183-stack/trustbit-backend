@@ -5,9 +5,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 // Import models
-const User = require('./models/User');
-const Data = require('./models/Data');
-
+const User = require('../models/User');
+const Data = require('../models/Data');
 const app = express();
 app.use(cors());
 app.use(express.json());
